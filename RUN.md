@@ -10,12 +10,43 @@
 Нужны:
 
 - **Node.js 20+** (рекомендую LTS 22) — проверить: `node -v`
-- **Git**
+- **Git** (не обязателен — можно скачать ZIP, см. ниже)
 - для телефона — приложение **Expo Go** (бесплатно, из App Store / Google Play)
 
+### Если Node.js ещё не установлен
+
+| ОС | Как поставить |
+|---|---|
+| **Windows** | Зайдите на [nodejs.org](https://nodejs.org) → большая зелёная кнопка **«Download Node.js (LTS)»** → запустите `.msi` → далее-далее-готово. **Важно: закройте и заново откройте терминал** (или перезагрузите ПК), иначе `node` не будет найден. |
+| **macOS** | Там же скачайте `.pkg`, либо `brew install node` (если есть Homebrew). |
+| **Linux** | `sudo apt install nodejs npm` или через [nvm](https://github.com/nvm-sh/nvm). |
+
+Проверка после установки (в новом терминале):
+
 ```bash
-git clone https://github.com/Reallymmm/AsdMobil.git
+node -v    # должно быть v22.x (или v20+)
+npm -v     # 10.x
+```
+
+> Если Windows пишет «node не является внутренней или внешней командой» —
+> терминал открыт со старыми настройками: закройте его и откройте заново.
+
+### Получить проект
+
+С Git:
+
+```bash
+git clone -b arena/01a0a72f-asdmobil https://github.com/Reallymmm/AsdMobil.git
 cd AsdMobil
+```
+
+Без Git: на странице репозитория GitHub выберите в выпадающем списке веток
+**`arena/01a0a72f-asdmobil`** (не main!) → зелёная кнопка **Code → Download ZIP**
+→ распакуйте → откройте терминал в распакованной папке.
+
+Затем — зависимости:
+
+```bash
 npm install
 ```
 
