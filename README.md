@@ -80,19 +80,24 @@ WebGL/CanvasKit в браузере — один и тот же код везд�
 
 ## Запуск
 
+Подробная пошаговая инструкция (веб и телефон по отдельности): **[RUN.md](./RUN.md)**.
+
 ```bash
 npm install
 
-# веб-версия (браузер)
+# веб-версия, дев-режим (live-reload)
 npm run web
-# перед первым запуском нужен canvaskit.wasm в public/ — уже лежит в репозитории;
-# восстановить: cp node_modules/canvaskit-wasm/bin/full/canvaskit.wasm public/
 
-# iOS / Android через Expo Go
+# веб-версия, продакшен: статика в dist/
+npx expo export --platform web
+node tools/serve.mjs 8080 dist
+
+# телефон (iOS/Android) через Expo Go — QR-код в терминале
 npx expo start
 ```
 
-Продакшен-сборка веба: `npx expo export --platform web` → `dist/`.
+> `public/canvaskit.wasm` нужен для веба — он уже лежит в репозитории;
+> восстановить: `cp node_modules/canvaskit-wasm/bin/full/canvaskit.wasm public/`
 
 ## Структура
 
