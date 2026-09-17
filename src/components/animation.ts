@@ -28,8 +28,6 @@ export function useClock(): SharedValue<number> {
   return clock;
 }
 
-const lerp = (a: number, b: number, t: number) => a + (b - a) * t;
-
 export function useSmoothParams(target: DreamParams, k = 0.09): SharedParams {
   const targetSv = useSharedValue<DreamParams>(target);
   const current = useSharedValue<DreamParams>(target);
@@ -40,15 +38,19 @@ export function useSmoothParams(target: DreamParams, k = 0.09): SharedParams {
 
   useFrameCallback(() => {
     'worklet';
+    // ВАЖНО: интерполяция объявлена ВНУТРИ ворклета. На Android/iOS ворклет
+    // выполняется в UI-runtime, откуда нельзя синхронно вызывать функции
+    // JS-контекста («Tried to synchronously call a Remote Function»).
+    const lp = (a: number, b: number) => a + (b - a) * k;
     const t = targetSv.value;
     const c = current.value;
     current.value = {
-      deep: { r: lerp(c.deep.r, t.deep.r, k), g: lerp(c.deep.g, t.deep.g, k), b: lerp(c.deep.b, t.deep.b, k) },
-      mid: { r: lerp(c.mid.r, t.mid.r, k), g: lerp(c.mid.g, t.mid.g, k), b: lerp(c.mid.b, t.mid.b, k) },
-      accent: { r: lerp(c.accent.r, t.accent.r, k), g: lerp(c.accent.g, t.accent.g, k), b: lerp(c.accent.b, t.accent.b, k) },
-      speed: lerp(c.speed, t.speed, k),
-      warp: lerp(c.warp, t.warp, k),
-      particles: lerp(c.particles, t.particles, k),
+      deep: { r: lp(c.deep.r, t.deep.r), g: lp(c.deep.g, t.deep.g), b: lp(c.deep.b, t.deep.b) },
+      mid: { r: lp(c.mid.r, t.mid.r), g: lp(c.mid.g, t.mid.g), b: lp(c.mid.b, t.mid.b) },
+      accent: { r: lp(c.accent.r, t.accent.r), g: lp(c.accent.g, t.accent.g), b: lp(c.accent.b, t.accent.b) },
+      speed: lp(c.speed, t.speed),
+      warp: lp(c.warp, t.warp),
+      particles: lp(c.particles, t.particles),
     };
   });
 
