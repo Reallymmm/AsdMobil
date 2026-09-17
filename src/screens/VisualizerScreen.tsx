@@ -5,7 +5,7 @@
  * рождают волны и вихри. Поверх — оверлей «запотевшего стекла»:
  * карточка с названием и датой сна (в углу), навигация снизу.
  */
-import React, { useMemo, useState } from 'react';
+import React, { useCallback, useMemo, useState } from 'react';
 import { StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import Animated, {
@@ -13,6 +13,7 @@ import Animated, {
   FadeInUp,
   FadeOut,
 } from 'react-native-reanimated';
+import { useFont } from '@shopify/react-native-skia';
 import { VisualizerCanvas } from '../components/VisualizerCanvas';
 import { GlassButton } from '../components/GlassButton';
 import { GlassContainer } from '../components/GlassContainer';
@@ -25,6 +26,8 @@ import {
   type DreamEntry,
 } from '../core/dreamEngine';
 import { TAG_BY_ID } from '../core/tags';
+import { shareDreamPostcard } from '../core/shareCard';
+import { haptic } from '../core/haptics';
 
 export interface VisualizerScreenProps {
   dream: DreamEntry;
@@ -40,6 +43,28 @@ export function VisualizerScreen({
   onNewDream,
 }: VisualizerScreenProps) {
   const [touched, setTouched] = useState(false);
+  const [sharing, setSharing] = useState(false);
+
+  // шрифты для рендера «открытки сна» (тем же движком Skia)
+  const titleFont = useFont(
+    require('@expo-google-fonts/unbounded/400Regular/Unbounded_400Regular.ttf'),
+    58,
+  );
+  const bodyFont = useFont(
+    require('@expo-google-fonts/manrope/500Medium/Manrope_500Medium.ttf'),
+    31,
+  );
+
+  const share = useCallback(async () => {
+    if (sharing) return;
+    setSharing(true);
+    haptic.medium();
+    try {
+      await shareDreamPostcard(dream, { title: titleFont, body: bodyFont });
+    } finally {
+      setSharing(false);
+    }
+  }, [bodyFont, dream, sharing, titleFont]);
 
   const params = useMemo(
     () => dreamParamsForIds(dream.tags, hashSeed(dream.id)),
@@ -77,6 +102,11 @@ export function VisualizerScreen({
                 {dream.title}
               </Text>
               <Text style={styles.dreamDate}>{formatDreamDate(dream.createdAt)}</Text>
+              {dream.note ? (
+                <Text style={styles.dreamNote} numberOfLines={5}>
+                  {dream.note}
+                </Text>
+              ) : null}
               {tagChips.length > 0 ? (
                 <View style={styles.chipRow}>
                   {tagChips.map((t) => (
@@ -108,6 +138,7 @@ export function VisualizerScreen({
           style={styles.bottomRow}
           pointerEvents="box-none"
         >
+          <GlassButton label="Открытка" icon="⤴" onPress={share} hapticKind="light" />
           <GlassButton label="Музей снов" icon="◈" onPress={onOpenGallery} hapticKind="light" />
           <GlassButton label="Новый сон" icon="✦" onPress={onNewDream} hapticKind="light" />
         </Animated.View>
@@ -139,6 +170,13 @@ const styles = StyleSheet.create({
     fontFamily: fonts.body,
     fontSize: 12.5,
     color: colors.textDim,
+  },
+  dreamNote: {
+    fontFamily: fonts.body,
+    fontSize: 13,
+    lineHeight: 18.5,
+    color: colors.textDim,
+    marginTop: 4,
   },
   chipRow: {
     flexDirection: 'row',

@@ -35,9 +35,10 @@ export interface DreamCardProps {
   dream: DreamEntry;
   onOpen: (dream: DreamEntry) => void;
   onDelete: (dream: DreamEntry) => void;
+  onEdit: (dream: DreamEntry) => void;
 }
 
-export function DreamCard({ dream, onOpen, onDelete }: DreamCardProps) {
+export function DreamCard({ dream, onOpen, onDelete, onEdit }: DreamCardProps) {
   const scale = useSharedValue(1);
   const dying = useSharedValue(0);
 
@@ -95,6 +96,11 @@ export function DreamCard({ dream, onOpen, onDelete }: DreamCardProps) {
     onOpen(dream);
   }, [dream, onOpen]);
 
+  const handleEdit = useCallback(() => {
+    haptic.light();
+    onEdit(dream);
+  }, [dream, onEdit]);
+
   const handleDelete = useCallback(() => {
     haptic.warning();
     dying.value = withTiming(1, { duration: 260 }, (fin) => {
@@ -129,21 +135,37 @@ export function DreamCard({ dream, onOpen, onDelete }: DreamCardProps) {
           <View style={styles.frost} />
           <View style={styles.content}>
             <View style={styles.topRow}>
-              <View style={{ flex: 1, paddingRight: 36 }}>
+              <View style={{ flex: 1, paddingRight: 78 }}>
                 <Text style={styles.title} numberOfLines={2}>
                   {dream.title}
                 </Text>
                 <Text style={styles.date}>{formatDreamDateShort(dream.createdAt)}</Text>
+                {dream.note ? (
+                  <Text style={styles.note} numberOfLines={2}>
+                    {dream.note}
+                  </Text>
+                ) : null}
               </View>
-              <Pressable
-                onPress={handleDelete}
-                hitSlop={10}
-                accessibilityRole="button"
-                accessibilityLabel="Удалить сон"
-                style={styles.delete}
-              >
-                <Text style={styles.deleteText}>✕</Text>
-              </Pressable>
+              <View style={styles.actions}>
+                <Pressable
+                  onPress={handleEdit}
+                  hitSlop={8}
+                  accessibilityRole="button"
+                  accessibilityLabel="Редактировать сон"
+                  style={styles.delete}
+                >
+                  <Text style={styles.deleteText}>✎</Text>
+                </Pressable>
+                <Pressable
+                  onPress={handleDelete}
+                  hitSlop={8}
+                  accessibilityRole="button"
+                  accessibilityLabel="Удалить сон"
+                  style={styles.delete}
+                >
+                  <Text style={styles.deleteText}>✕</Text>
+                </Pressable>
+              </View>
             </View>
             {tagChips.length > 0 ? (
               <View style={styles.chips}>
@@ -205,6 +227,10 @@ const styles = StyleSheet.create({
     color: colors.textDim,
     marginTop: 6,
   },
+  actions: {
+    flexDirection: 'row',
+    gap: 8,
+  },
   delete: {
     width: 34,
     height: 34,
@@ -214,6 +240,13 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(255,255,255,0.07)',
     borderColor: 'rgba(255,255,255,0.14)',
     borderWidth: StyleSheet.hairlineWidth,
+  },
+  note: {
+    fontFamily: fonts.body,
+    fontSize: 12.5,
+    lineHeight: 17.5,
+    color: colors.textDim,
+    marginTop: 7,
   },
   deleteText: {
     color: colors.textDim,

@@ -24,11 +24,17 @@ export interface WeaveButtonProps {
   /** акцентный цвет свечения (акцент текущей палитры сна) */
   glowColor: string;
   disabled?: boolean;
+  label?: string;
 }
 
 const PULSE_MS = 1600;
 
-export function WeaveButton({ onPress, glowColor, disabled = false }: WeaveButtonProps) {
+export function WeaveButton({
+  onPress,
+  glowColor,
+  disabled = false,
+  label = '✦ СОТКАТЬ СОН',
+}: WeaveButtonProps) {
   const scale = useSharedValue(1);
   const shake = useSharedValue(0);
   const breath = useSharedValue(0);
@@ -98,7 +104,7 @@ export function WeaveButton({ onPress, glowColor, disabled = false }: WeaveButto
       onPressOut={onPressOut}
       onPress={handle}
       accessibilityRole="button"
-      accessibilityLabel="Соткать сон"
+      accessibilityLabel={label}
       style={{ alignSelf: 'stretch' }}
     >
       <Animated.View style={pressStyle}>
@@ -161,7 +167,7 @@ export function WeaveButton({ onPress, glowColor, disabled = false }: WeaveButto
               textShadowOffset: { width: 0, height: 0 },
             }}
           >
-            ✦ СОТКАТЬ СОН
+            {label}
           </Text>
         </View>
       </Animated.View>

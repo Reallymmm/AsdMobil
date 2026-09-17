@@ -185,14 +185,32 @@ export interface DreamEntry {
   title: string;
   createdAt: number;
   tags: string[];
+  /** подробное описание сна (опционально, для старых записей отсутствует) */
+  note?: string;
 }
 
-export function createDreamEntry(title: string, tagIds: string[]): DreamEntry {
+export function createDreamEntry(title: string, tagIds: string[], note?: string): DreamEntry {
   return {
     id: `${Date.now().toString(36)}${Math.random().toString(36).slice(2, 8)}`,
     title: title.trim() || 'Безымянный сон',
     createdAt: Date.now(),
     tags: [...tagIds],
+    note: note?.trim() ? note.trim() : undefined,
+  };
+}
+
+/** Обновлённая запись с сохранением id/даты создания. */
+export function updateDreamEntry(
+  previous: DreamEntry,
+  title: string,
+  tagIds: string[],
+  note?: string,
+): DreamEntry {
+  return {
+    ...previous,
+    title: title.trim() || 'Безымянный сон',
+    tags: [...tagIds],
+    note: note?.trim() ? note.trim() : undefined,
   };
 }
 
@@ -225,4 +243,53 @@ export function museumAmbient(entries: DreamEntry[]): DreamParams {
     entries.flatMap((e) => tagsByIds(e.tags)),
     hashSeed(entries.map((e) => e.id).join('|')),
   );
+}
+
+// --- статистика музея ----------------------------------------------------------
+
+export interface DreamStats {
+  total: number;
+  /** записей за последние 7 дней */
+  week: number;
+  /** самый частый тег (null, если тегов нет) */
+  topTagId: string | null;
+  /** дней подряд с хотя бы одним сном (считая сегодня/вчера) */
+  streak: number;
+}
+
+function dayKey(ts: number): number {
+  const d = new Date(ts);
+  return Date.UTC(d.getFullYear(), d.getMonth(), d.getDate()) / 86400000;
+}
+
+export function computeDreamStats(entries: DreamEntry[]): DreamStats {
+  const now = Date.now();
+  const weekAgo = now - 7 * 24 * 3600 * 1000;
+  const week = entries.filter((e) => e.createdAt > weekAgo).length;
+
+  const counts = new Map<string, number>();
+  for (const e of entries) {
+    for (const t of e.tags) counts.set(t, (counts.get(t) ?? 0) + 1);
+  }
+  let topTagId: string | null = null;
+  let topCount = 0;
+  for (const [id, c] of counts) {
+    if (c > topCount) {
+      topTagId = id;
+      topCount = c;
+    }
+  }
+
+  // серия дней: уникальные дни записей, идём назад от сегодня (или вчера)
+  const days = new Set(entries.map((e) => dayKey(e.createdAt)));
+  const today = dayKey(now);
+  const yesterday = today - 1;
+  let streak = 0;
+  let cursor = days.has(today) ? today : days.has(yesterday) ? yesterday : -1;
+  while (cursor >= 0 && days.has(cursor)) {
+    streak++;
+    cursor--;
+  }
+
+  return { total: entries.length, week, topTagId, streak };
 }

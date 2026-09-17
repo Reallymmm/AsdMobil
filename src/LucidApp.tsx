@@ -25,6 +25,7 @@ interface DreamsContextValue {
   dreams: DreamEntry[];
   loaded: boolean;
   addDream: (dream: DreamEntry) => void;
+  updateDream: (dream: DreamEntry) => void;
   removeDream: (id: string) => void;
 }
 
@@ -32,6 +33,7 @@ const DreamsContext = createContext<DreamsContextValue>({
   dreams: [],
   loaded: false,
   addDream: () => {},
+  updateDream: () => {},
   removeDream: () => {},
 });
 
@@ -104,9 +106,13 @@ export default function LucidApp() {
     setDreams((prev) => prev.filter((d) => d.id !== id));
   }, []);
 
+  const updateDream = useCallback((dream: DreamEntry) => {
+    setDreams((prev) => prev.map((d) => (d.id === dream.id ? dream : d)));
+  }, []);
+
   const ctx = useMemo(
-    () => ({ dreams, loaded, addDream, removeDream }),
-    [dreams, loaded, addDream, removeDream],
+    () => ({ dreams, loaded, addDream, updateDream, removeDream }),
+    [dreams, loaded, addDream, updateDream, removeDream],
   );
 
   if (!fontsLoaded) return <SplashFallback />;
@@ -118,6 +124,7 @@ export default function LucidApp() {
         <AppNavigator
           dreams={dreams}
           onWeave={addDream}
+          onUpdateDream={updateDream}
           onDeleteDream={(dream) => removeDream(dream.id)}
         />
       </SafeAreaProvider>

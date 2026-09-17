@@ -20,7 +20,7 @@ import { GalleryScreen } from '../screens/GalleryScreen';
 import type { DreamEntry } from '../core/dreamEngine';
 
 export type Route =
-  | { name: 'record' }
+  | { name: 'record'; editId?: string }
   | { name: 'visualizer'; dreamId: string }
   | { name: 'gallery' };
 
@@ -34,6 +34,7 @@ export interface AppNavigatorApi {
 export interface AppNavigatorProps {
   dreams: DreamEntry[];
   onWeave: (dream: DreamEntry) => void;
+  onUpdateDream: (dream: DreamEntry) => void;
   onDeleteDream: (dream: DreamEntry) => void;
 }
 
@@ -53,7 +54,12 @@ function AnimatedScreen({
   );
 }
 
-export function AppNavigator({ dreams, onWeave, onDeleteDream }: AppNavigatorProps) {
+export function AppNavigator({
+  dreams,
+  onWeave,
+  onUpdateDream,
+  onDeleteDream,
+}: AppNavigatorProps) {
   const [stack, setStack] = useState<Route[]>([{ name: 'record' }]);
   const [leaving, setLeaving] = useState<Route | null>(null);
   const progress = useSharedValue(1);
@@ -128,23 +134,42 @@ export function AppNavigator({ dreams, onWeave, onDeleteDream }: AppNavigatorPro
 
   const nav = useMemo<AppNavigatorApi>(() => ({ push, pop, popTo }), [pop, popTo, push]);
 
-  const renderRecord = useCallback(() => {
-    return (
-      <RecordScreen
-        onWeave={(dream) => {
-          onWeave(dream);
-          nav.push({ name: 'visualizer', dreamId: dream.id });
-        }}
-        onOpenGallery={() => nav.popTo('gallery')}
-      />
-    );
-  }, [nav, onWeave]);
+  const renderRecord = useCallback(
+    (editId?: string) => {
+      const editing = editId ? dreams.find((d) => d.id === editId) : undefined;
+      if (editing) {
+        return (
+          <RecordScreen
+            initial={editing}
+            onWeave={() => {}}
+            onUpdate={(dream) => {
+              onUpdateDream(dream);
+              nav.pop();
+            }}
+            onOpenGallery={() => nav.popTo('gallery')}
+            onBack={() => nav.pop()}
+          />
+        );
+      }
+      return (
+        <RecordScreen
+          onWeave={(dream) => {
+            onWeave(dream);
+            nav.push({ name: 'visualizer', dreamId: dream.id });
+          }}
+          onUpdate={() => {}}
+          onOpenGallery={() => nav.popTo('gallery')}
+        />
+      );
+    },
+    [dreams, nav, onUpdateDream, onWeave],
+  );
 
   const renderScreen = useCallback(
     (route: Route) => {
       switch (route.name) {
         case 'record':
-          return renderRecord();
+          return renderRecord(route.editId);
         case 'visualizer': {
           const dream = dreams.find((d) => d.id === route.dreamId) ?? dreams[0];
           if (!dream) return renderRecord();
@@ -162,6 +187,7 @@ export function AppNavigator({ dreams, onWeave, onDeleteDream }: AppNavigatorPro
             <GalleryScreen
               dreams={dreams}
               onOpenDream={(dream) => nav.push({ name: 'visualizer', dreamId: dream.id })}
+              onEditDream={(dream) => nav.push({ name: 'record', editId: dream.id })}
               onDeleteDream={onDeleteDream}
               onBack={() => nav.popTo('record')}
               onNewDream={() => nav.popTo('record')}
